@@ -17,7 +17,7 @@ variable "instance_type" {
 
 variable "min_size" {
   type    = number
-  default = 1
+  default = 2
 }
 
 variable "max_size" {

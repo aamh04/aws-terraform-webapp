@@ -1,7 +1,7 @@
 # Replace the bucket name with the one created by ./bootstrap
 terraform {
   backend "s3" {
-    bucket       = "REPLACE_WITH_YOUR_STATE_BUCKET"
+    bucket       = "anu-tfstate-215229807923"
     key          = "dev/terraform.tfstate"
     region       = "us-east-1"
     encrypt      = true

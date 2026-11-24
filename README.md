@@ -36,6 +36,66 @@ flowchart LR
 - **Observability**: CPU, 5xx and unhealthy-host alarms routed to SNS
 - **CI**: fmt, validate and plan on every pull request, OIDC auth to AWS
 
+## Results
+
+**Remote state bucket (S3, versioned and encrypted)**
+![S3 state bucket](docs/screenshots/01-s3-state-bucket.png)
+
+**terraform init and plan: 23 resources**
+![Terraform init and plan](docs/screenshots/02-terraform-init-plan.png)
+
+**terraform apply: 23 resources**
+![Terraform init and plan](docs/screenshots/03-terraform-apply.png)
+
+**Both targets healthy behind the load balancer**
+![Healthy targets](docs/screenshots/04-targets-healthy.png)
+
+**Traffic rotating between two instances**
+![Load balancing browser](docs/screenshots/05-load-balancing-browser.png)
+
+**Traffic load balancing instances**
+![Load instance](docs/screenshots/06-ec2-instances.png)
+
+**Traffic rotating Application Loadbalancer**
+![Load balancing](docs/screenshots/07-alb.png)
+
+**Cloudwatch alarms**
+![Cloud Watch Alarm](docs/screenshots/08-alarms.png)
+
+**Instance Autoscaling Group**
+![ASG Active](docs/screenshots/09-asg-activity.png)
+
+**Security Group of Instance and loadbalancer**
+![Security Group](docs/screenshots/10-security-groups.png)
+
+**Instance Autoscaling Group Stable state**
+![ASG Self healing](docs/screenshots/11-selfheal-terminal.png)
+
+**Self-healing test:** I terminated an instance under live traffic. The load balancer
+stopped routing to it, the auto scaling group launched a replacement, and full
+capacity returned in under 5 minutes with no manual action.
+![Self-healing](docs/screenshots/12-selfheal-activity.png)
+
+**Instance Autoscaling Group Restored state**
+![ASG restored](docs/screenshots/15-selfheal-targets-healthy.png)
+
+**Everything destroyed afterwards**
+![Terraform destroy](docs/screenshots/16-terraform-destroy.png)
+
+## Issue I found and fixed
+
+The first deploy scaled in to one instance because the auto scaling group had
+`min_size = 1`. The group scaled down when CPU stayed under the policy's low-load
+threshold. I changed the module default to `min_size = 2` so the web tier always
+spans two availability zones.
+
+**Autoscaling in alarm state**
+![ASG alarm state](docs/screenshots/auto-scaling-scale-in-alarm.png)
+
+**Autoscaling min size issue fix**
+![min size issue fix](docs/screenshots/min-size-fix-apply.png)
+
+
 ## Repo layout
 
 ```
