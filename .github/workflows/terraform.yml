@@ -5,28 +5,19 @@ on:
     paths: ["environments/**", "modules/**"]
   push:
     branches: [main]
-    paths: ["environments/**", "modules/**"]
+    paths: ["environments/**", "modules/**", ".github/workflows/**"]
   workflow_dispatch:
-    inputs:
-      apply:
-        description: "Run terraform apply after a successful plan"
-        type: boolean
-        default: false
 
 permissions:
-  id-token: write # needed for OIDC to AWS (no stored access keys)
+  id-token: write
   contents: read
 
 env:
   TF_VERSION: "1.10.5"
-  AWS_REGION: "us-east-1"
 
 jobs:
-  plan:
+  validate:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: environments/dev
     steps:
       - uses: actions/checkout@v4
 
@@ -35,22 +26,21 @@ jobs:
           terraform_version: ${{ env.TF_VERSION }}
 
       - name: Format check
-        run: terraform fmt -check -recursive ../..
+        run: terraform fmt -check -recursive
 
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+      - name: Init (no backend, no AWS login needed)
+        working-directory: environments/dev
+        run: terraform init -backend=false
 
-      - run: terraform init
-      - run: terraform validate
-      - run: terraform plan -no-color
+      - name: Validate
+        working-directory: environments/dev
+        run: terraform validate
 
-  apply:
-    needs: plan
-    if: github.event_name == 'workflow_dispatch' && inputs.apply
+  plan:
+    # Manual only until an AWS OIDC role is configured
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate
     runs-on: ubuntu-latest
-    environment: dev # add required reviewers in repo settings for a manual approval gate
     defaults:
       run:
         working-directory: environments/dev
@@ -64,7 +54,7 @@ jobs:
       - uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: us-east-1
 
       - run: terraform init
-      - run: terraform apply -auto-approve
+      - run: terraform plan -no-color
